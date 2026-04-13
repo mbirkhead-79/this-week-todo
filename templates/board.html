@@ -1,0 +1,153 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="content-header">
+    <div class="board-header-row">
+        <h2>Board</h2>
+        <a href="/add-task" class="btn btn-primary btn-sm">+ Add Task</a>
+    </div>
+</div>
+
+<div class="board">
+    {% for status in statuses %}
+    <div class="board-column" data-status="{{ status }}"
+         ondragover="event.preventDefault(); this.classList.add('drag-over')"
+         ondragleave="this.classList.remove('drag-over')"
+         ondrop="dropTask(event, '{{ status }}'); this.classList.remove('drag-over')">
+        <div class="column-header">
+            <span class="column-title">{{ columns[status].label }}</span>
+            <span class="column-count">{{ columns[status].tasks | length }}</span>
+        </div>
+        <div class="column-tasks">
+            {% for task in columns[status].tasks %}
+            <div class="board-card" draggable="true"
+                 data-task-id="{{ task.id }}"
+                 ondragstart="dragStart(event, {{ task.id }})"
+                 onclick="openTaskPanel({{ task.id }})">
+                <div class="card-title">{{ task.title }}</div>
+                {% if task.description %}
+                <div class="card-desc">{{ task.description[:80] }}{% if task.description|length > 80 %}...{% endif %}</div>
+                {% endif %}
+                <div class="card-meta">
+                    <span class="priority-dot priority-dot-{{ task.priority }}"></span>
+                    {% if task.due_date %}
+                    <span class="card-date {% if task.is_overdue %}overdue{% endif %}">{{ task.due_date.strftime('%b %d') }}</span>
+                    {% endif %}
+                    {% if task.category %}
+                    <span class="card-category">{{ task.category.name }}</span>
+                    {% endif %}
+                    {% if task.action_items_progress %}
+                    <span class="card-progress">{{ task.action_items_progress }}</span>
+                    {% endif %}
+                </div>
+                {% if task.action_items %}
+                <div class="card-progress-bar"><div class="card-progress-fill" style="width: {{ task.action_items_percent }}%"></div></div>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<script>
+let draggedTaskId = null;
+
+function dragStart(event, taskId) {
+    draggedTaskId = taskId;
+    event.dataTransfer.effectAllowed = 'move';
+    event.target.classList.add('dragging');
+    // For mobile/touch, set data
+    event.dataTransfer.setData('text/plain', taskId);
+}
+
+document.addEventListener('dragend', (e) => {
+    document.querySelectorAll('.dragging').forEach(el => el.classList.remove('dragging'));
+    document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over'));
+});
+
+function dropTask(event, newStatus) {
+    event.preventDefault();
+    if (!draggedTaskId) return;
+
+    fetch(`/api/task/${draggedTaskId}/status`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({status: newStatus})
+    }).then(r => {
+        if (r.ok) location.reload();
+    });
+}
+
+// Touch support for mobile drag-and-drop
+let touchDragEl = null;
+let touchClone = null;
+let touchTaskId = null;
+
+document.addEventListener('touchstart', (e) => {
+    const card = e.target.closest('.board-card');
+    if (!card) return;
+
+    touchTaskId = card.dataset.taskId;
+    touchDragEl = card;
+
+    // Long press to start drag
+    card._touchTimer = setTimeout(() => {
+        card.classList.add('dragging');
+        touchClone = card.cloneNode(true);
+        touchClone.classList.add('touch-ghost');
+        document.body.appendChild(touchClone);
+    }, 300);
+}, {passive: true});
+
+document.addEventListener('touchmove', (e) => {
+    if (!touchClone) return;
+    const touch = e.touches[0];
+    touchClone.style.left = (touch.clientX - 80) + 'px';
+    touchClone.style.top = (touch.clientY - 20) + 'px';
+
+    document.querySelectorAll('.board-column').forEach(col => {
+        const rect = col.getBoundingClientRect();
+        if (touch.clientX >= rect.left && touch.clientX <= rect.right &&
+            touch.clientY >= rect.top && touch.clientY <= rect.bottom) {
+            col.classList.add('drag-over');
+        } else {
+            col.classList.remove('drag-over');
+        }
+    });
+}, {passive: true});
+
+document.addEventListener('touchend', (e) => {
+    if (touchDragEl) {
+        clearTimeout(touchDragEl._touchTimer);
+        touchDragEl.classList.remove('dragging');
+    }
+    if (!touchClone) { touchDragEl = null; return; }
+
+    const touch = e.changedTouches[0];
+    let targetCol = null;
+    document.querySelectorAll('.board-column').forEach(col => {
+        const rect = col.getBoundingClientRect();
+        if (touch.clientX >= rect.left && touch.clientX <= rect.right &&
+            touch.clientY >= rect.top && touch.clientY <= rect.bottom) {
+            targetCol = col;
+        }
+        col.classList.remove('drag-over');
+    });
+
+    if (targetCol && touchTaskId) {
+        const newStatus = targetCol.dataset.status;
+        fetch(`/api/task/${touchTaskId}/status`, {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({status: newStatus})
+        }).then(r => { if (r.ok) location.reload(); });
+    }
+
+    touchClone.remove();
+    touchClone = null;
+    touchDragEl = null;
+    touchTaskId = null;
+});
+</script>
+{% endblock %}

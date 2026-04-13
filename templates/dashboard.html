@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="content-header">
+    <h2>Dashboard</h2>
+</div>
+
+<!-- Stats cards -->
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-number">{{ total }}</div>
+        <div class="stat-label">Total Tasks</div>
+    </div>
+    <div class="stat-card stat-success">
+        <div class="stat-number">{{ completed }}</div>
+        <div class="stat-label">Completed</div>
+    </div>
+    <div class="stat-card stat-warning">
+        <div class="stat-number">{{ overdue }}</div>
+        <div class="stat-label">Overdue</div>
+    </div>
+    <div class="stat-card stat-accent">
+        <div class="stat-number">{{ completion_pct }}%</div>
+        <div class="stat-label">Done</div>
+        <div class="stat-bar"><div class="stat-bar-fill" style="width: {{ completion_pct }}%"></div></div>
+    </div>
+</div>
+
+<!-- Board summary -->
+<div class="dash-section">
+    <h3 class="dash-section-title">Board Overview</h3>
+    <div class="board-summary">
+        <a href="/board" class="board-summary-col">
+            <span class="board-summary-count">{{ status_counts.get('todo', 0) }}</span>
+            <span class="board-summary-label">To Do</span>
+        </a>
+        <a href="/board" class="board-summary-col">
+            <span class="board-summary-count">{{ status_counts.get('in_progress', 0) }}</span>
+            <span class="board-summary-label">In Progress</span>
+        </a>
+        <a href="/board" class="board-summary-col">
+            <span class="board-summary-count">{{ status_counts.get('done', 0) }}</span>
+            <span class="board-summary-label">Done</span>
+        </a>
+    </div>
+</div>
+
+<!-- Due today -->
+{% if due_today %}
+<div class="dash-section">
+    <h3 class="dash-section-title">Due Today</h3>
+    <div class="dash-task-list">
+        {% for task in due_today %}
+        <div class="dash-task-item" onclick="openTaskPanel({{ task.id }})">
+            <span class="priority-dot priority-dot-{{ task.priority }}"></span>
+            <span class="dash-task-title">{{ task.title }}</span>
+            {% if task.category %}
+            <span class="meta-tag category-tag">{{ task.category.name }}</span>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<!-- High priority -->
+{% if high_priority %}
+<div class="dash-section">
+    <h3 class="dash-section-title">High Priority</h3>
+    <div class="dash-task-list">
+        {% for task in high_priority[:5] %}
+        <div class="dash-task-item" onclick="openTaskPanel({{ task.id }})">
+            <span class="priority-dot priority-dot-high"></span>
+            <span class="dash-task-title">{{ task.title }}</span>
+            {% if task.due_date %}
+            <span class="meta-tag {% if task.is_overdue %}overdue{% endif %}">{{ task.due_date.strftime('%b %d') }}</span>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<!-- Recent tasks -->
+{% if recent %}
+<div class="dash-section">
+    <h3 class="dash-section-title">Recently Added</h3>
+    <div class="dash-task-list">
+        {% for task in recent %}
+        <div class="dash-task-item" onclick="openTaskPanel({{ task.id }})">
+            <span class="priority-dot priority-dot-{{ task.priority }}"></span>
+            <span class="dash-task-title {% if task.completed %}task-done-text{% endif %}">{{ task.title }}</span>
+            <span class="meta-tag">{{ task.created_at.strftime('%b %d') if task.created_at else '' }}</span>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+{% endif %}
+
+<!-- Quick links -->
+<div class="dash-quick-links">
+    <a href="/add-task" class="btn btn-primary">+ Add Task</a>
+    <a href="/board" class="btn btn-cancel">Open Board</a>
+    <a href="/inbox" class="btn btn-cancel">View All Tasks</a>
+</div>
+{% endblock %}

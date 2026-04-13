@@ -59,7 +59,7 @@
                     {% endif %}
                 </button>
             </form>
-            <div class="task-body">
+            <div class="task-body" onclick="openTaskPanel({{ task.id }})" style="cursor:pointer;">
                 <div class="task-title">{{ task.title }}</div>
                 {% if task.description %}
                 <div class="task-description">{{ task.description }}</div>

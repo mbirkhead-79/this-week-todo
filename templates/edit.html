@@ -67,6 +67,15 @@
         </div>
 
         <div class="form-group">
+            <label for="status">Status</label>
+            <select id="status" name="status">
+                <option value="todo" {% if task.status == 'todo' %}selected{% endif %}>To Do</option>
+                <option value="in_progress" {% if task.status == 'in_progress' %}selected{% endif %}>In Progress</option>
+                <option value="done" {% if task.status == 'done' %}selected{% endif %}>Done</option>
+            </select>
+        </div>
+
+        <div class="form-group">
             <label for="category">Category</label>
             <div class="category-input-group">
                 <select name="category_id" id="category-select" onchange="toggleNewCategory(this)">

@@ -45,11 +45,23 @@
                     <span>Search</span>
                 </a>
                 <hr class="nav-divider">
-                <a href="/" class="nav-item {% if page == 'inbox' %}active{% endif %}">
+                <a href="/" class="nav-item {% if page == 'dashboard' %}active{% endif %}">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+                    </svg>
+                    <span>Dashboard</span>
+                </a>
+                <a href="/inbox" class="nav-item {% if page == 'inbox' %}active{% endif %}">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/>
                     </svg>
                     <span>Inbox</span>
+                </a>
+                <a href="/board" class="nav-item {% if page == 'board' %}active{% endif %}">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="2" y="3" width="6" height="18" rx="1"/><rect x="9" y="3" width="6" height="12" rx="1"/><rect x="16" y="3" width="6" height="15" rx="1"/>
+                    </svg>
+                    <span>Board</span>
                 </a>
                 <a href="/today" class="nav-item {% if page == 'today' %}active{% endif %}">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -75,18 +87,28 @@
         </aside>
 
         <!-- Main Content -->
-        <main class="main-content">
+        <main class="main-content {% if page == 'board' %}main-content-wide{% endif %}">
             {% block content %}{% endblock %}
         </main>
+
+        <!-- Slide-out task detail panel -->
+        <div class="panel-overlay" onclick="closePanel()"></div>
+        <aside class="detail-panel" id="detail-panel">
+            <div class="panel-header">
+                <h3>Task Details</h3>
+                <button class="panel-close" onclick="closePanel()">&times;</button>
+            </div>
+            <div class="panel-body" id="panel-body">
+                <!-- Filled by JS -->
+            </div>
+        </aside>
     </div>
 
     <script>
         // Delete confirmation
         document.querySelectorAll('.delete-form').forEach(form => {
             form.addEventListener('submit', e => {
-                if (!confirm('Are you sure you want to delete this?')) {
-                    e.preventDefault();
-                }
+                if (!confirm('Are you sure you want to delete this?')) e.preventDefault();
             });
         });
 
@@ -95,8 +117,6 @@
             document.getElementById('sidebar').classList.toggle('open');
             document.querySelector('.sidebar-overlay').classList.toggle('open');
         }
-
-        // Close sidebar when clicking a nav link (mobile)
         document.querySelectorAll('.nav-item').forEach(link => {
             link.addEventListener('click', () => {
                 document.getElementById('sidebar').classList.remove('open');
@@ -104,64 +124,135 @@
             });
         });
 
-        // Register service worker for PWA
+        // Service worker
         if ('serviceWorker' in navigator) {
-            navigator.serviceWorker.register('/static/sw.js')
-                .then(() => console.log('SW registered'))
-                .catch(err => console.log('SW registration failed:', err));
+            navigator.serviceWorker.register('/static/sw.js').catch(() => {});
         }
 
         // Voice dictation
         function startVoiceInput(targetId) {
-            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-            if (!SpeechRecognition) {
-                alert('Voice input is not supported in this browser. Try Safari or Chrome.');
-                return;
-            }
-
-            const recognition = new SpeechRecognition();
+            const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SR) { alert('Voice input not supported in this browser.'); return; }
+            const recognition = new SR();
             recognition.lang = 'en-US';
             recognition.interimResults = false;
-            recognition.continuous = false;
-
             const btn = document.querySelector(`[data-voice-target="${targetId}"]`);
             btn.classList.add('listening');
-
-            recognition.onresult = (event) => {
-                const transcript = event.results[0][0].transcript;
-                const target = document.getElementById(targetId);
-                if (target.tagName === 'TEXTAREA') {
-                    target.value = target.value ? target.value + ' ' + transcript : transcript;
-                } else {
-                    target.value = transcript;
-                }
+            recognition.onresult = (e) => {
+                const t = document.getElementById(targetId);
+                const text = e.results[0][0].transcript;
+                t.value = t.tagName === 'TEXTAREA' ? (t.value ? t.value + ' ' + text : text) : text;
                 btn.classList.remove('listening');
             };
-
-            recognition.onerror = () => { btn.classList.remove('listening'); };
-            recognition.onend = () => { btn.classList.remove('listening'); };
-
+            recognition.onerror = () => btn.classList.remove('listening');
+            recognition.onend = () => btn.classList.remove('listening');
             recognition.start();
         }
 
         // Share task
         function shareTask(title, description) {
             const text = description ? `${title}\n${description}` : title;
-
             if (navigator.share) {
-                navigator.share({ title: 'THIS WEEK', text: text })
-                    .catch(() => {});
+                navigator.share({ title: 'THIS WEEK', text }).catch(() => {});
             } else {
-                // Desktop fallback: copy to clipboard
                 navigator.clipboard.writeText(text).then(() => {
-                    const tooltip = document.createElement('div');
-                    tooltip.className = 'copy-toast';
-                    tooltip.textContent = 'Copied to clipboard!';
-                    document.body.appendChild(tooltip);
-                    setTimeout(() => tooltip.remove(), 2000);
+                    const t = document.createElement('div');
+                    t.className = 'copy-toast';
+                    t.textContent = 'Copied to clipboard!';
+                    document.body.appendChild(t);
+                    setTimeout(() => t.remove(), 2000);
                 });
             }
         }
+
+        // Slide-out panel
+        function openTaskPanel(taskId) {
+            fetch(`/api/task/${taskId}`)
+                .then(r => r.json())
+                .then(task => {
+                    const body = document.getElementById('panel-body');
+                    let html = `
+                        <div class="panel-title">${task.title}</div>
+                        ${task.description ? `<div class="panel-desc">${task.description}</div>` : ''}
+                        <div class="panel-meta-grid">
+                            <div class="panel-meta-item">
+                                <span class="panel-label">Status</span>
+                                <span class="panel-value status-badge status-${task.status}">${task.status.replace('_', ' ')}</span>
+                            </div>
+                            <div class="panel-meta-item">
+                                <span class="panel-label">Priority</span>
+                                <span class="panel-value priority-tag priority-${task.priority}">${task.priority}</span>
+                            </div>
+                            ${task.due_date_display ? `<div class="panel-meta-item">
+                                <span class="panel-label">Due Date</span>
+                                <span class="panel-value ${task.is_overdue ? 'overdue' : ''}">${task.due_date_display}</span>
+                            </div>` : ''}
+                            ${task.category ? `<div class="panel-meta-item">
+                                <span class="panel-label">Category</span>
+                                <span class="panel-value category-tag">${task.category}</span>
+                            </div>` : ''}
+                            ${task.collaborator_email ? `<div class="panel-meta-item">
+                                <span class="panel-label">Shared with</span>
+                                <span class="panel-value collab-tag">${task.collaborator_email}</span>
+                            </div>` : ''}
+                        </div>`;
+                    if (task.action_items.length > 0) {
+                        html += `<div class="panel-section">
+                            <span class="panel-label">Action Items</span>
+                            <div class="panel-progress-bar"><div class="panel-progress-fill" style="width:${task.action_items_percent}%"></div></div>
+                            <span class="panel-progress-text">${task.action_items_progress} completed</span>
+                            <ul class="panel-checklist">`;
+                        task.action_items.forEach(ai => {
+                            html += `<li class="${ai.completed ? 'checked' : ''}">${ai.completed ? '&#10003; ' : '&#9634; '}${ai.text}</li>`;
+                        });
+                        html += `</ul></div>`;
+                    }
+                    html += `<div class="panel-actions">
+                        <a href="/edit/${task.id}" class="btn btn-primary">Edit Task</a>
+                    </div>`;
+                    body.innerHTML = html;
+                    document.getElementById('detail-panel').classList.add('open');
+                    document.querySelector('.panel-overlay').classList.add('open');
+                });
+        }
+
+        function closePanel() {
+            document.getElementById('detail-panel').classList.remove('open');
+            document.querySelector('.panel-overlay').classList.remove('open');
+        }
+
+        // Browser notifications
+        function requestNotifications() {
+            if ('Notification' in window && Notification.permission === 'default') {
+                Notification.requestPermission();
+            }
+        }
+        requestNotifications();
+
+        // Check for due-today tasks and notify
+        function checkDueNotifications() {
+            if ('Notification' in window && Notification.permission === 'granted') {
+                fetch('/api/notifications')
+                    .then(r => r.json())
+                    .then(data => {
+                        if (data.due_today > 0) {
+                            new Notification('THIS WEEK', {
+                                body: `You have ${data.due_today} task${data.due_today > 1 ? 's' : ''} due today!`,
+                                icon: '/static/icon-192.png'
+                            });
+                        }
+                        if (data.overdue > 0) {
+                            new Notification('THIS WEEK', {
+                                body: `${data.overdue} task${data.overdue > 1 ? 's are' : ' is'} overdue!`,
+                                icon: '/static/icon-192.png'
+                            });
+                        }
+                    }).catch(() => {});
+            }
+        }
+        // Check once on load, then every 30 minutes
+        setTimeout(checkDueNotifications, 3000);
+        setInterval(checkDueNotifications, 30 * 60 * 1000);
     </script>
 </body>
 </html>

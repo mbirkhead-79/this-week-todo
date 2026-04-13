@@ -3,6 +3,9 @@ from datetime import datetime, date
 
 db = SQLAlchemy()
 
+STATUSES = ['todo', 'in_progress', 'done']
+STATUS_LABELS = {'todo': 'To Do', 'in_progress': 'In Progress', 'done': 'Done'}
+
 
 class Category(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -18,6 +21,7 @@ class Task(db.Model):
     title = db.Column(db.String(200), nullable=False)
     description = db.Column(db.Text, default='')
     completed = db.Column(db.Boolean, default=False)
+    status = db.Column(db.String(20), default='todo')
     priority = db.Column(db.String(10), default='medium')
     due_date = db.Column(db.Date, nullable=True)
     category_id = db.Column(db.Integer, db.ForeignKey('category.id'), nullable=True)
@@ -39,6 +43,36 @@ class Task(db.Model):
             return None
         done = sum(1 for item in self.action_items if item.completed)
         return f'{done}/{total}'
+
+    @property
+    def action_items_percent(self):
+        total = len(self.action_items)
+        if total == 0:
+            return 0
+        done = sum(1 for item in self.action_items if item.completed)
+        return int((done / total) * 100)
+
+    @property
+    def status_label(self):
+        return STATUS_LABELS.get(self.status, self.status)
+
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'title': self.title,
+            'description': self.description or '',
+            'completed': self.completed,
+            'status': self.status,
+            'priority': self.priority,
+            'due_date': self.due_date.strftime('%Y-%m-%d') if self.due_date else '',
+            'due_date_display': self.due_date.strftime('%b %d') if self.due_date else '',
+            'category': self.category.name if self.category else '',
+            'collaborator_email': self.collaborator_email or '',
+            'is_overdue': self.is_overdue,
+            'action_items': [{'id': ai.id, 'text': ai.text, 'completed': ai.completed} for ai in self.action_items],
+            'action_items_progress': self.action_items_progress,
+            'action_items_percent': self.action_items_percent,
+        }
 
     def __repr__(self):
         return f'<Task {self.title}>'
