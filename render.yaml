@@ -1,3 +1,9 @@
+databases:
+  - name: thisweek-db
+    plan: free
+    databaseName: thisweek
+    user: thisweek
+
 services:
   - type: web
     name: this-week-todo
@@ -8,3 +14,7 @@ services:
     envVars:
       - key: PYTHON_VERSION
         value: "3.11.6"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: thisweek-db
+          property: connectionURI
