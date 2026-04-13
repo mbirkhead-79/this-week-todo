@@ -9,6 +9,7 @@
     <meta name="theme-color" content="#0d0d0d">
     <link rel="manifest" href="/static/manifest.json">
     <link rel="apple-touch-icon" href="/static/icon-192.png">
+    <link rel="icon" type="image/png" href="/static/favicon.png">
     <title>THIS WEEK</title>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
     <link rel="stylesheet" href="/static/style.css">
@@ -29,7 +30,10 @@
         <!-- Sidebar -->
         <aside class="sidebar" id="sidebar">
             <div class="sidebar-header">
-                <h1>THIS WEEK</h1>
+                <div class="logo-row">
+                    <img src="/static/logo.svg" alt="THIS WEEK" class="sidebar-logo">
+                    <h1>THIS WEEK</h1>
+                </div>
             </div>
             <nav class="sidebar-nav">
                 <a href="/add-task" class="nav-item {% if page == 'add_task' %}active{% endif %}">

@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Background -->
+  <rect width="512" height="512" rx="96" fill="#0d0d0d"/>
+  <!-- Checkmark -->
+  <path d="M120 270 L195 345 L270 200" fill="none" stroke="#e44332" stroke-width="36" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- TW text -->
+  <text x="360" y="310" text-anchor="middle" font-family="Inter,Arial,sans-serif" font-weight="800" font-size="180" fill="#ffffff" letter-spacing="-8">TW</text>
+</svg>
