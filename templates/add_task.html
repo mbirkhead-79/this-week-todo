@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="content-header">
+    <h2>Add task</h2>
+</div>
+
+<div class="add-task-form-container">
+    <form method="post" action="/add" class="add-task-form">
+        <div class="form-group">
+            <label for="title">Task name</label>
+            <div class="voice-input-wrapper">
+                <input type="text" id="title" name="title" placeholder="e.g., Go to Costco" required autofocus>
+                <button type="button" class="voice-btn" data-voice-target="title" onclick="startVoiceInput('title')" title="Voice input">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+                </button>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="description">Description</label>
+            <div class="voice-input-wrapper">
+                <textarea id="description" name="description" placeholder="e.g., Shop for mom's birthday" rows="3"></textarea>
+                <button type="button" class="voice-btn" data-voice-target="description" onclick="startVoiceInput('description')" title="Voice input">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/></svg>
+                </button>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>Action Items</label>
+            <div class="action-items-container" id="action-items">
+                <div class="action-item-row">
+                    <span class="action-bullet">&#8226;</span>
+                    <input type="text" name="action_items" placeholder="e.g., cake" class="action-item-input">
+                    <button type="button" class="remove-action-btn" onclick="removeActionItem(this)" title="Remove">&times;</button>
+                </div>
+            </div>
+            <button type="button" class="add-action-btn" onclick="addActionItem()">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Add item
+            </button>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label for="due_date">Due date</label>
+                <input type="date" id="due_date" name="due_date">
+            </div>
+            <div class="form-group">
+                <label for="priority">Priority</label>
+                <select id="priority" name="priority">
+                    <option value="low">Low</option>
+                    <option value="medium" selected>Medium</option>
+                    <option value="high">High</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="category">Category</label>
+            <div class="category-input-group">
+                <select name="category_id" id="category-select" onchange="toggleNewCategory(this)">
+                    <option value="">No Category</option>
+                    {% for cat in categories %}
+                    <option value="{{ cat.id }}">{{ cat.name }}</option>
+                    {% endfor %}
+                    <option value="__new__">+ New Category...</option>
+                </select>
+                <input type="text" name="category_name" id="new-category-input" placeholder="New category name" style="display:none;">
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="collaborator_email">Collaborate</label>
+            <div class="collaborate-input-wrapper">
+                <svg class="collaborate-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                <input type="email" id="collaborator_email" name="collaborator_email" placeholder="Enter email to share this task">
+            </div>
+        </div>
+
+        <div class="form-actions">
+            <a href="/" class="btn btn-cancel">Cancel</a>
+            <button type="submit" class="btn btn-primary">Add task</button>
+        </div>
+    </form>
+</div>
+
+<script>
+function toggleNewCategory(select) {
+    const input = document.getElementById('new-category-input');
+    if (select.value === '__new__') {
+        input.style.display = '';
+        input.focus();
+        select.value = '';
+    } else {
+        input.style.display = 'none';
+        input.value = '';
+    }
+}
+
+function addActionItem() {
+    const container = document.getElementById('action-items');
+    const row = document.createElement('div');
+    row.className = 'action-item-row';
+    row.innerHTML = '<span class="action-bullet">&#8226;</span>' +
+        '<input type="text" name="action_items" placeholder="Add an item..." class="action-item-input">' +
+        '<button type="button" class="remove-action-btn" onclick="removeActionItem(this)" title="Remove">&times;</button>';
+    container.appendChild(row);
+    row.querySelector('input').focus();
+}
+
+function removeActionItem(btn) {
+    const container = document.getElementById('action-items');
+    if (container.children.length > 1) {
+        btn.parentElement.remove();
+    } else {
+        btn.parentElement.querySelector('input').value = '';
+    }
+}
+</script>
+{% endblock %}

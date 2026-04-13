@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="THIS WEEK">
+    <meta name="theme-color" content="#0d0d0d">
+    <link rel="manifest" href="/static/manifest.json">
+    <link rel="apple-touch-icon" href="/static/icon-192.png">
+    <title>THIS WEEK</title>
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap">
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="app-layout">
+        <!-- Mobile header -->
+        <header class="mobile-header">
+            <button class="hamburger-btn" onclick="toggleSidebar()" aria-label="Menu">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+            </button>
+            <span class="mobile-title">THIS WEEK</span>
+        </header>
+
+        <!-- Sidebar overlay -->
+        <div class="sidebar-overlay" onclick="toggleSidebar()"></div>
+
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <h1>THIS WEEK</h1>
+            </div>
+            <nav class="sidebar-nav">
+                <a href="/add-task" class="nav-item {% if page == 'add_task' %}active{% endif %}">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="16"/><line x1="8" y1="12" x2="16" y2="12"/>
+                    </svg>
+                    <span>Add task</span>
+                </a>
+                <a href="/search" class="nav-item {% if page == 'search' %}active{% endif %}">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                    </svg>
+                    <span>Search</span>
+                </a>
+                <hr class="nav-divider">
+                <a href="/" class="nav-item {% if page == 'inbox' %}active{% endif %}">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polyline points="22 12 16 12 14 15 10 15 8 12 2 12"/><path d="M5.45 5.11L2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11z"/>
+                    </svg>
+                    <span>Inbox</span>
+                </a>
+                <a href="/today" class="nav-item {% if page == 'today' %}active{% endif %}">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+                        <text x="12" y="18" text-anchor="middle" font-size="8" fill="currentColor" stroke="none" font-weight="600">{{ today_day }}</text>
+                    </svg>
+                    <span>Today</span>
+                </a>
+                <a href="/upcoming" class="nav-item {% if page == 'upcoming' %}active{% endif %}">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/>
+                        <line x1="8" y1="14" x2="16" y2="14"/><line x1="8" y1="18" x2="12" y2="18"/>
+                    </svg>
+                    <span>Upcoming</span>
+                </a>
+                <a href="/filters" class="nav-item {% if page == 'filters' %}active{% endif %}">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/>
+                    </svg>
+                    <span>Filters & Labels</span>
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            {% block content %}{% endblock %}
+        </main>
+    </div>
+
+    <script>
+        // Delete confirmation
+        document.querySelectorAll('.delete-form').forEach(form => {
+            form.addEventListener('submit', e => {
+                if (!confirm('Are you sure you want to delete this?')) {
+                    e.preventDefault();
+                }
+            });
+        });
+
+        // Mobile sidebar toggle
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('open');
+            document.querySelector('.sidebar-overlay').classList.toggle('open');
+        }
+
+        // Close sidebar when clicking a nav link (mobile)
+        document.querySelectorAll('.nav-item').forEach(link => {
+            link.addEventListener('click', () => {
+                document.getElementById('sidebar').classList.remove('open');
+                document.querySelector('.sidebar-overlay').classList.remove('open');
+            });
+        });
+
+        // Register service worker for PWA
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/static/sw.js')
+                .then(() => console.log('SW registered'))
+                .catch(err => console.log('SW registration failed:', err));
+        }
+
+        // Voice dictation
+        function startVoiceInput(targetId) {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (!SpeechRecognition) {
+                alert('Voice input is not supported in this browser. Try Safari or Chrome.');
+                return;
+            }
+
+            const recognition = new SpeechRecognition();
+            recognition.lang = 'en-US';
+            recognition.interimResults = false;
+            recognition.continuous = false;
+
+            const btn = document.querySelector(`[data-voice-target="${targetId}"]`);
+            btn.classList.add('listening');
+
+            recognition.onresult = (event) => {
+                const transcript = event.results[0][0].transcript;
+                const target = document.getElementById(targetId);
+                if (target.tagName === 'TEXTAREA') {
+                    target.value = target.value ? target.value + ' ' + transcript : transcript;
+                } else {
+                    target.value = transcript;
+                }
+                btn.classList.remove('listening');
+            };
+
+            recognition.onerror = () => { btn.classList.remove('listening'); };
+            recognition.onend = () => { btn.classList.remove('listening'); };
+
+            recognition.start();
+        }
+
+        // Share task
+        function shareTask(title, description) {
+            const text = description ? `${title}\n${description}` : title;
+
+            if (navigator.share) {
+                navigator.share({ title: 'THIS WEEK', text: text })
+                    .catch(() => {});
+            } else {
+                // Desktop fallback: copy to clipboard
+                navigator.clipboard.writeText(text).then(() => {
+                    const tooltip = document.createElement('div');
+                    tooltip.className = 'copy-toast';
+                    tooltip.textContent = 'Copied to clipboard!';
+                    document.body.appendChild(tooltip);
+                    setTimeout(() => tooltip.remove(), 2000);
+                });
+            }
+        }
+    </script>
+</body>
+</html>
