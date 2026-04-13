@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: this-week-todo
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn app:app
+    plan: free
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.11.6"
