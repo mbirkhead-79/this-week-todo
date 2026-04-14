@@ -1,4 +1,6 @@
 from flask_sqlalchemy import SQLAlchemy
+from flask_login import UserMixin
+from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime, date
 
 db = SQLAlchemy()
@@ -7,10 +9,32 @@ STATUSES = ['todo', 'in_progress', 'done']
 STATUS_LABELS = {'todo': 'To Do', 'in_progress': 'In Progress', 'done': 'Done'}
 
 
+class User(UserMixin, db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    email = db.Column(db.String(200), nullable=False, unique=True)
+    password_hash = db.Column(db.String(256), nullable=False)
+    name = db.Column(db.String(100), default='')
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    tasks = db.relationship('Task', backref='owner', lazy=True, cascade='all, delete-orphan')
+    categories = db.relationship('Category', backref='owner', lazy=True, cascade='all, delete-orphan')
+
+    def set_password(self, password):
+        self.password_hash = generate_password_hash(password)
+
+    def check_password(self, password):
+        return check_password_hash(self.password_hash, password)
+
+    def __repr__(self):
+        return f'<User {self.email}>'
+
+
 class Category(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(50), nullable=False, unique=True)
+    name = db.Column(db.String(50), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     tasks = db.relationship('Task', backref='category', lazy=True)
+
+    __table_args__ = (db.UniqueConstraint('name', 'user_id'),)
 
     def __repr__(self):
         return f'<Category {self.name}>'
@@ -25,6 +49,7 @@ class Task(db.Model):
     priority = db.Column(db.String(10), default='medium')
     due_date = db.Column(db.Date, nullable=True)
     category_id = db.Column(db.Integer, db.ForeignKey('category.id'), nullable=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     collaborator_email = db.Column(db.String(200), default='')
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     action_items = db.relationship('ActionItem', backref='task', lazy=True,
